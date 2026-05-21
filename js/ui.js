@@ -55,6 +55,53 @@ const UI = {
         });
     },
 
+    renderBuildings: function() {
+        const buildingList = document.getElementById('building-list');
+        if (!buildingList) return;
+
+        buildingList.innerHTML = '';
+
+        if (!window.gameState.buildings) return;
+
+        window.gameState.buildings.forEach((building) => {
+            const card = document.createElement('div');
+            card.className = 'building-card survivor-card'; // Reuse survivor-card styling
+
+            let statusHtml = '';
+            let actionHtml = '';
+
+            if (building.built) {
+                statusHtml = `<span style="color: #4caf50;">Built (Lv ${building.level}/${building.maxLevel})</span>`;
+                if (building.level < building.maxLevel) {
+                    const upgradeCostStr = Object.entries(building.upgradeCost)
+                        .map(([res, cost]) => `${cost} ${res}`).join(', ');
+                    const canAfford = window.BuildingsLogic.canAfford(building.upgradeCost);
+                    actionHtml = `<button class="build-btn" data-id="${building.id}" data-action="upgrade" ${canAfford ? '' : 'disabled'}>Upgrade (${upgradeCostStr})</button>`;
+                }
+            } else {
+                statusHtml = `<span style="color: #f44336;">Not Built</span>`;
+                const buildCostStr = Object.entries(building.buildCost)
+                    .map(([res, cost]) => `${cost} ${res}`).join(', ');
+                const canAfford = window.BuildingsLogic.canAfford(building.buildCost);
+                actionHtml = `<button class="build-btn" data-id="${building.id}" data-action="build" ${canAfford ? '' : 'disabled'}>Build (${buildCostStr})</button>`;
+            }
+
+            card.innerHTML = `
+                <div class="survivor-header">
+                    <span class="survivor-name">${building.name}</span>
+                    <span class="survivor-health">${statusHtml}</span>
+                </div>
+                <div style="font-size: 0.85rem; margin-bottom: 0.5rem; color: #aaa;">
+                    ${building.description}
+                </div>
+                <div class="building-action" style="margin-top: 0.5rem;">
+                    ${actionHtml}
+                </div>
+            `;
+            buildingList.appendChild(card);
+        });
+    },
+
     addLogMessage: function(message) {
         const logList = document.getElementById('log-list');
         if (!logList) return;
@@ -73,6 +120,7 @@ const UI = {
     renderAll: function() {
         this.renderResourceBar();
         this.renderSurvivors();
+        this.renderBuildings();
     }
 };
 

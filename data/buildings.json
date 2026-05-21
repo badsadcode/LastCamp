@@ -1,0 +1,68 @@
+[
+    {
+        "id": "shelter",
+        "name": "Shelter",
+        "level": 0,
+        "maxLevel": 3,
+        "built": false,
+        "buildCost": { "scrap": 10, "tools": 1 },
+        "upgradeCost": { "scrap": 20, "tools": 2 },
+        "description": "Houses survivors. Reduces daily fatigue gain.",
+        "effects": ["reduce_fatigue"]
+    },
+    {
+        "id": "storage",
+        "name": "Storage",
+        "level": 0,
+        "maxLevel": 3,
+        "built": false,
+        "buildCost": { "scrap": 15, "tools": 1 },
+        "upgradeCost": { "scrap": 25, "tools": 2 },
+        "description": "Increases maximum resource capacity.",
+        "effects": ["increase_caps"]
+    },
+    {
+        "id": "infirmary",
+        "name": "Infirmary",
+        "level": 0,
+        "maxLevel": 3,
+        "built": false,
+        "buildCost": { "scrap": 20, "tools": 2, "medicine": 2 },
+        "upgradeCost": { "scrap": 30, "tools": 3 },
+        "description": "Improves fatigue and health recovery during Rest.",
+        "effects": ["improve_healing"]
+    },
+    {
+        "id": "watchtower",
+        "name": "Watchtower",
+        "level": 0,
+        "maxLevel": 3,
+        "built": false,
+        "buildCost": { "scrap": 25, "tools": 2 },
+        "upgradeCost": { "scrap": 40, "tools": 3 },
+        "description": "Increases camp security daily.",
+        "effects": ["increase_security"]
+    },
+    {
+        "id": "workshop",
+        "name": "Workshop",
+        "level": 0,
+        "maxLevel": 3,
+        "built": false,
+        "buildCost": { "scrap": 30, "tools": 4 },
+        "upgradeCost": { "scrap": 50, "tools": 5 },
+        "description": "Allows advanced construction later.",
+        "effects": ["unlock_advanced"]
+    },
+    {
+        "id": "garden",
+        "name": "Garden",
+        "level": 0,
+        "maxLevel": 3,
+        "built": false,
+        "buildCost": { "scrap": 15, "tools": 2, "food": 5 },
+        "upgradeCost": { "scrap": 25, "tools": 3 },
+        "description": "Produces a small amount of food daily.",
+        "effects": ["produce_food"]
+    }
+]

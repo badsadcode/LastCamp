@@ -10,6 +10,7 @@ const initialState = {
         morale: 55,
         security: 30
     },
+    buildings: [],
     survivors: [
         {
             id: 'survivor_1',
@@ -83,11 +84,41 @@ function advanceDay() {
         logs.push(`Camp morale decreased due to lack of food.`);
     }
 
+    // Check built buildings for passive/modifier effects
+    const isBuilt = (id) => {
+        const b = gameState.buildings.find(b => b.id === id);
+        return b && b.built;
+    };
+
+    const shelterLevel = isBuilt('shelter') ? gameState.buildings.find(b => b.id === 'shelter').level : 0;
+    const infirmaryLevel = isBuilt('infirmary') ? gameState.buildings.find(b => b.id === 'infirmary').level : 0;
+    const watchtowerLevel = isBuilt('watchtower') ? gameState.buildings.find(b => b.id === 'watchtower').level : 0;
+    const gardenLevel = isBuilt('garden') ? gameState.buildings.find(b => b.id === 'garden').level : 0;
+
+    // Passive Watchtower Effect
+    if (watchtowerLevel > 0) {
+        gameState.resources.security += (2 * watchtowerLevel);
+    }
+
+    // Passive Garden Effect (assuming someone works it or it just produces passively based on level as per simple GDD)
+    if (gardenLevel > 0) {
+        const foodProd = gardenLevel * 2;
+        gameState.resources.food += foodProd;
+        logs.push(`The garden produced ${foodProd} food.`);
+    }
+
     // 2. Process tasks
     gameState.survivors.forEach(survivor => {
+        // Apply shelter fatigue reduction to all tasks conceptually, or just reduce base fatigue here
+        if (shelterLevel > 0) {
+            survivor.fatigue = Math.max(0, survivor.fatigue - (shelterLevel * 2));
+        }
+
         switch (survivor.current_task) {
             case 'Rest':
-                survivor.fatigue = Math.max(0, survivor.fatigue - 15);
+                let recovery = 15;
+                if (infirmaryLevel > 0) recovery += (infirmaryLevel * 5); // Infirmary boosts rest recovery
+                survivor.fatigue = Math.max(0, survivor.fatigue - recovery);
                 logs.push(`${survivor.name} rested and recovered fatigue.`);
                 break;
             case 'Guard':
@@ -118,7 +149,25 @@ function advanceDay() {
         }
     });
 
-    // 3. Advance Day
+    // 3. Apply Storage Caps
+    const isBuiltLocal = (id) => {
+        const b = gameState.buildings.find(b => b.id === id);
+        return b && b.built;
+    };
+    const storageLevel = isBuiltLocal('storage') ? gameState.buildings.find(b => b.id === 'storage').level : 0;
+
+    const baseCap = 50;
+    const currentCap = baseCap + (storageLevel * 25);
+
+    for (const res of ['food', 'medicine', 'scrap', 'tools', 'fuel', 'ammo']) {
+        if (gameState.resources[res] > currentCap) {
+            gameState.resources[res] = currentCap;
+            // Optionally log cap reached
+            // logs.push(`${res} capacity reached. Excess lost.`);
+        }
+    }
+
+    // 4. Advance Day
     gameState.day += 1;
     logs.push(`--- Day ${gameState.day} Begins ---`);
 
