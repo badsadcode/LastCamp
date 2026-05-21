@@ -1,0 +1,155 @@
+/* Dark survival-themed UI */
+:root {
+    --bg-color: #121212;
+    --panel-bg: #1e1e1e;
+    --text-color: #e0e0e0;
+    --accent-color: #ff5722;
+    --border-color: #333;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Courier New', Courier, monospace;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+header {
+    background-color: var(--panel-bg);
+    padding: 1rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--accent-color);
+}
+
+.resource-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    background-color: var(--panel-bg);
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+}
+
+.resource-item {
+    margin: 0.25rem;
+}
+
+.main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.panel {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    border-right: 1px solid var(--border-color);
+}
+
+.panel:last-child {
+    border-right: none;
+}
+
+.survivor-card {
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+}
+
+.survivor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.survivor-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.survivor-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.survivor-task {
+    margin-top: 0.5rem;
+}
+
+.survivor-task select {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 0.25rem;
+    width: 100%;
+}
+
+.action-btn {
+    background-color: var(--accent-color);
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+.action-btn:hover {
+    background-color: #e64a19;
+}
+
+.log-area {
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    border-radius: 4px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.log-area h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+#log-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    font-size: 0.9rem;
+}
+
+#log-list li {
+    padding: 0.25rem 0;
+    border-bottom: 1px dashed var(--border-color);
+}
+
+#log-list li:last-child {
+    border-bottom: none;
+}
