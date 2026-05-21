@@ -15,6 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.EventsLogic) loadPromises.push(window.EventsLogic.loadEvents());
 
     Promise.all(loadPromises).then(() => {
+        // Generate map once missions are loaded
+        if (window.MapLogic) {
+            window.MapLogic.generateMap();
+        }
         UI.renderAll();
     });
 
@@ -95,6 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.EventsLogic) loadPromises.push(window.EventsLogic.loadEvents());
 
             Promise.all(loadPromises).then(() => {
+                if (window.MapLogic) {
+                    window.MapLogic.generateMap();
+                }
                 document.getElementById('log-list').innerHTML = '';
                 UI.addLogMessage("Started a new game.");
                 UI.renderAll();

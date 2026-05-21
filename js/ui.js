@@ -77,7 +77,7 @@ const UI = {
         const activeMissionList = document.getElementById('active-mission-list');
         if (!missionList || !activeMissionList) return;
 
-        missionList.innerHTML = '';
+        missionList.innerHTML = '<div style="color: #aaa; font-size: 0.85rem;">Select a location on the map.</div>';
         activeMissionList.innerHTML = '';
 
         if (!window.gameState.availableMissions) return;
@@ -100,57 +100,61 @@ const UI = {
             activeMissionList.innerHTML = '<div style="font-size: 0.85rem; color: #aaa;">No active missions.</div>';
         }
 
-        // Render Available Missions
-        window.gameState.availableMissions.forEach((mission) => {
-            const card = document.createElement('div');
-            card.className = 'building-card survivor-card';
+        // If a mission is selected on the map, render its details
+        if (window.UI.selectedMissionId) {
+            const mission = window.gameState.availableMissions.find(m => m.id === window.UI.selectedMissionId);
+            if (mission) {
+                missionList.innerHTML = ''; // clear placeholder
+                const card = document.createElement('div');
+                card.className = 'building-card survivor-card';
 
-            // Check if any survivors are assigned to this mission intent
-            const assignedSurvivors = window.gameState.survivors.filter(s => s.assigned_mission === mission.id);
-            const teamSize = assignedSurvivors.length;
+                // Check if any survivors are assigned to this mission intent
+                const assignedSurvivors = window.gameState.survivors.filter(s => s.assigned_mission === mission.id);
+                const teamSize = assignedSurvivors.length;
 
-            const canSend = teamSize >= mission.requiredSurvivors && teamSize <= mission.maxSurvivors;
+                const canSend = teamSize >= mission.requiredSurvivors && teamSize <= mission.maxSurvivors;
 
-            // Generate assignment dropdown for available survivors
-            const availableSurvivors = window.gameState.survivors.filter(s => s.status === 'available' && s.health > 0);
+                // Generate assignment dropdown for available survivors
+                const availableSurvivors = window.gameState.survivors.filter(s => s.status === 'available' && s.health > 0);
 
-            let assignHtml = `<select class="mission-assign-select" data-mission-id="${mission.id}">
-                <option value="">Assign Survivor...</option>
-                ${availableSurvivors.map(s => {
-                    const isAssigned = s.assigned_mission === mission.id;
-                    if (!s.assigned_mission || isAssigned) {
-                        return `<option value="${s.id}" ${isAssigned ? 'selected disabled' : ''}>${s.name}</option>`;
-                    }
-                    return '';
-                }).join('')}
-            </select>`;
+                let assignHtml = `<select class="mission-assign-select" data-mission-id="${mission.id}">
+                    <option value="">Assign Survivor...</option>
+                    ${availableSurvivors.map(s => {
+                        const isAssigned = s.assigned_mission === mission.id;
+                        if (!s.assigned_mission || isAssigned) {
+                            return `<option value="${s.id}" ${isAssigned ? 'selected disabled' : ''}>${s.name}</option>`;
+                        }
+                        return '';
+                    }).join('')}
+                </select>`;
 
-            let teamHtml = '';
-            if (assignedSurvivors.length > 0) {
-                teamHtml = `<div style="margin: 0.5rem 0;"><strong>Team:</strong> `;
-                teamHtml += assignedSurvivors.map(s => `
-                    <span>${s.name} <button class="unassign-btn" data-survivor-id="${s.id}" data-action="unassign-mission" style="font-size:0.6rem; cursor:pointer;">X</button></span>
-                `).join(', ');
-                teamHtml += `</div>`;
+                let teamHtml = '';
+                if (assignedSurvivors.length > 0) {
+                    teamHtml = `<div style="margin: 0.5rem 0;"><strong>Team:</strong> `;
+                    teamHtml += assignedSurvivors.map(s => `
+                        <span>${s.name} <button class="unassign-btn" data-survivor-id="${s.id}" data-action="unassign-mission" style="font-size:0.6rem; cursor:pointer;">X</button></span>
+                    `).join(', ');
+                    teamHtml += `</div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="survivor-header">
+                        <span class="survivor-name">${mission.name} (${mission.type})</span>
+                        <span class="survivor-health">Danger: ${mission.danger}%</span>
+                    </div>
+                    <div style="font-size: 0.85rem; margin-bottom: 0.5rem; color: #aaa;">
+                        ${mission.description}<br>
+                        <strong>Duration:</strong> ${mission.duration} days | <strong>Team:</strong> ${mission.requiredSurvivors}-${mission.maxSurvivors}
+                    </div>
+                    ${teamHtml}
+                    <div class="building-action" style="margin-top: 0.5rem; display: flex; gap: 0.5rem; align-items: center;">
+                        ${assignHtml}
+                        <button class="build-btn" data-id="${mission.id}" data-action="send-mission" ${canSend ? '' : 'disabled'}>Send</button>
+                    </div>
+                `;
+                missionList.appendChild(card);
             }
-
-            card.innerHTML = `
-                <div class="survivor-header">
-                    <span class="survivor-name">${mission.name} (${mission.type})</span>
-                    <span class="survivor-health">Danger: ${mission.danger}%</span>
-                </div>
-                <div style="font-size: 0.85rem; margin-bottom: 0.5rem; color: #aaa;">
-                    ${mission.description}<br>
-                    <strong>Duration:</strong> ${mission.duration} days | <strong>Team:</strong> ${mission.requiredSurvivors}-${mission.maxSurvivors}
-                </div>
-                ${teamHtml}
-                <div class="building-action" style="margin-top: 0.5rem; display: flex; gap: 0.5rem; align-items: center;">
-                    ${assignHtml}
-                    <button class="build-btn" data-id="${mission.id}" data-action="send-mission" ${canSend ? '' : 'disabled'}>Send</button>
-                </div>
-            `;
-            missionList.appendChild(card);
-        });
+        }
     },
 
     renderBuildings: function() {
@@ -265,11 +269,79 @@ const UI = {
         }
     },
 
+    renderMap: function() {
+        const canvas = document.getElementById('world-map-canvas');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+
+        // Clear background
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillRect(0, 0, w, h);
+
+        if (!window.gameState.mapNodes) return;
+
+        const homeNode = window.gameState.mapNodes.find(n => n.id === 'home');
+
+        // Draw lines from home to missions
+        if (homeNode) {
+            window.gameState.mapNodes.forEach(node => {
+                if (node.id !== 'home') {
+                    ctx.beginPath();
+                    ctx.moveTo(homeNode.x, homeNode.y);
+                    ctx.lineTo(node.x, node.y);
+                    ctx.strokeStyle = '#444';
+                    ctx.setLineDash([5, 5]);
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            });
+        }
+
+        // Draw nodes
+        window.gameState.mapNodes.forEach(node => {
+            const isSelected = window.UI.selectedMissionId === node.missionId;
+            const isHome = node.id === 'home';
+
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, isHome ? 8 : 6, 0, 2 * Math.PI);
+
+            if (isHome) {
+                ctx.fillStyle = '#4caf50'; // Green for home
+            } else if (isSelected) {
+                ctx.fillStyle = '#ff9800'; // Orange for selected
+            } else {
+                ctx.fillStyle = '#2196f3'; // Blue for missions
+            }
+
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = isSelected ? 2 : 1;
+            ctx.stroke();
+
+            // Label
+            ctx.fillStyle = '#ddd';
+            ctx.font = '12px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(node.name, node.x, node.y - 12);
+
+            if (node.type === 'mission') {
+                ctx.fillStyle = '#888';
+                ctx.font = '10px monospace';
+                ctx.fillText(`${node.travelDays}d`, node.x, node.y + 16);
+            }
+        });
+    },
+
     renderAll: function() {
         this.renderResourceBar();
         this.renderSurvivors();
         this.renderBuildings();
         this.renderMissions();
+        this.renderMap();
 
         // If loaded into an active event, show it
         if (window.gameState && window.gameState.activeEvent) {
@@ -277,6 +349,47 @@ const UI = {
         }
     }
 };
+
+// Canvas click handler
+document.addEventListener('DOMContentLoaded', () => {
+    const canvas = document.getElementById('world-map-canvas');
+    if (canvas) {
+        canvas.addEventListener('click', (e) => {
+            if (!window.gameState.mapNodes) return;
+
+            const rect = canvas.getBoundingClientRect();
+            // Scale coords based on internal canvas resolution vs displayed size
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
+
+            // Find clicked node
+            let clickedNode = null;
+            for (let node of window.gameState.mapNodes) {
+                if (node.id === 'home') continue;
+                const dx = clickX - node.x;
+                const dy = clickY - node.y;
+                if (Math.sqrt(dx*dx + dy*dy) <= 15) { // 15px click radius
+                    clickedNode = node;
+                    break;
+                }
+            }
+
+            if (clickedNode) {
+                window.UI.selectedMissionId = clickedNode.missionId;
+                window.UI.renderMissions();
+                window.UI.renderMap();
+            } else {
+                // Deselect if clicked in empty space
+                window.UI.selectedMissionId = null;
+                window.UI.renderMissions();
+                window.UI.renderMap();
+            }
+        });
+    }
+});
 
 window.UI = UI;
 
