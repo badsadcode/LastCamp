@@ -11,6 +11,8 @@ const initialState = {
         security: 30
     },
     buildings: [],
+    availableMissions: [],
+    activeMissions: [],
     survivors: [
         {
             id: 'survivor_1',
@@ -20,7 +22,9 @@ const initialState = {
             fatigue: 20,
             skills: { scavenging: 4, combat: 3, construction: 2, medicine: 1 },
             traits: ['Practical', 'Light Sleeper'],
-            current_task: 'Rest'
+            current_task: 'Rest',
+            status: 'available',
+            injuries: []
         },
         {
             id: 'survivor_2',
@@ -30,7 +34,9 @@ const initialState = {
             fatigue: 30,
             skills: { scavenging: 1, combat: 1, construction: 1, medicine: 4 },
             traits: ['Medic', 'Sickly'],
-            current_task: 'Rest'
+            current_task: 'Rest',
+            status: 'available',
+            injuries: []
         },
         {
             id: 'survivor_3',
@@ -40,7 +46,9 @@ const initialState = {
             fatigue: 10,
             skills: { scavenging: 2, combat: 2, construction: 4, medicine: 0 },
             traits: ['Builder', 'Short Temper'],
-            current_task: 'Rest'
+            current_task: 'Rest',
+            status: 'available',
+            injuries: []
         },
         {
             id: 'survivor_4',
@@ -50,7 +58,9 @@ const initialState = {
             fatigue: 5,
             skills: { scavenging: 3, combat: 2, construction: 1, medicine: 1 },
             traits: ['Quiet Step', 'Stealthy'],
-            current_task: 'Rest'
+            current_task: 'Rest',
+            status: 'available',
+            injuries: []
         },
         {
             id: 'survivor_5',
@@ -60,7 +70,9 @@ const initialState = {
             fatigue: 15,
             skills: { scavenging: 1, combat: 5, construction: 1, medicine: 0 },
             traits: ['Reckless', 'Combat-focused'],
-            current_task: 'Rest'
+            current_task: 'Rest',
+            status: 'available',
+            injuries: []
         }
     ]
 };
@@ -109,9 +121,30 @@ function advanceDay() {
 
     // 2. Process tasks
     gameState.survivors.forEach(survivor => {
+        if (survivor.health <= 0) {
+            return; // Dead survivors don't process tasks or heal
+        }
+
         // Apply shelter fatigue reduction to all tasks conceptually, or just reduce base fatigue here
         if (shelterLevel > 0) {
             survivor.fatigue = Math.max(0, survivor.fatigue - (shelterLevel * 2));
+        }
+
+        // Injury Healing Mechanics
+        if (survivor.health < 100) {
+            let healAmount = 0;
+            if (survivor.current_task === 'Rest' || survivor.current_task === 'Treat Patients') {
+                healAmount += 5;
+                if (infirmaryLevel > 0) healAmount += (infirmaryLevel * 5);
+
+                // If we have medicine, consume some to heal faster
+                if (gameState.resources.medicine > 0 && survivor.health < 80) {
+                    gameState.resources.medicine -= 1;
+                    healAmount += 15;
+                    logs.push(`Medicine was used to treat ${survivor.name}.`);
+                }
+            }
+            survivor.health = Math.min(100, survivor.health + healAmount);
         }
 
         switch (survivor.current_task) {
@@ -149,7 +182,23 @@ function advanceDay() {
         }
     });
 
-    // 3. Apply Storage Caps
+    // 3. Resolve active missions
+    if (window.gameState.activeMissions) {
+        for (let i = window.gameState.activeMissions.length - 1; i >= 0; i--) {
+            const mission = window.gameState.activeMissions[i];
+            mission.daysRemaining -= 1;
+
+            if (mission.daysRemaining <= 0) {
+                if (window.MissionsLogic) {
+                    const missionLogs = window.MissionsLogic.resolveMission(mission);
+                    logs = logs.concat(missionLogs);
+                }
+                window.gameState.activeMissions.splice(i, 1);
+            }
+        }
+    }
+
+    // 4. Apply Storage Caps
     const isBuiltLocal = (id) => {
         const b = gameState.buildings.find(b => b.id === id);
         return b && b.built;
@@ -167,7 +216,16 @@ function advanceDay() {
         }
     }
 
-    // 4. Advance Day
+    // 5. Check for random events
+    if (window.EventsLogic) {
+        const triggeredEvent = window.EventsLogic.checkForRandomEvent();
+        if (triggeredEvent) {
+            window.EventsLogic.triggerEvent(triggeredEvent);
+            logs.push(`A random event occurred: ${triggeredEvent.title}`);
+        }
+    }
+
+    // 6. Advance Day
     gameState.day += 1;
     logs.push(`--- Day ${gameState.day} Begins ---`);
 

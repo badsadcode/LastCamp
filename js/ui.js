@@ -34,6 +34,27 @@ const UI = {
                 `<option value="${t}" ${survivor.current_task === t ? 'selected' : ''}>${t}</option>`
             ).join('');
 
+            let actionArea = '';
+            if (survivor.status === 'on_mission') {
+                actionArea = `<div class="survivor-task" style="color: #ff9800; font-weight: bold;">On Mission</div>`;
+            } else if (survivor.health <= 0) {
+                actionArea = `<div class="survivor-task" style="color: red; font-weight: bold;">Dead</div>`;
+            } else {
+                actionArea = `
+                <div class="survivor-task">
+                    <label for="task-${index}">Task:</label>
+                    <select id="task-${index}" class="task-select" data-id="${survivor.id}">
+                        ${taskOptions}
+                    </select>
+                </div>
+                `;
+            }
+
+            let injuriesHtml = '';
+            if (survivor.injuries && survivor.injuries.length > 0) {
+                injuriesHtml = `<div style="grid-column: span 2; color: #f44336; font-size: 0.8rem;">Injuries: ${survivor.injuries.join(', ')}</div>`;
+            }
+
             card.innerHTML = `
                 <div class="survivor-header">
                     <span class="survivor-name">${survivor.name}</span>
@@ -43,15 +64,92 @@ const UI = {
                     <div>Morale: ${survivor.morale}</div>
                     <div>Fatigue: ${survivor.fatigue}</div>
                     <div style="grid-column: span 2;">Traits: ${survivor.traits.join(', ')}</div>
+                    ${injuriesHtml}
                 </div>
-                <div class="survivor-task">
-                    <label for="task-${index}">Task:</label>
-                    <select id="task-${index}" class="task-select" data-id="${survivor.id}">
-                        ${taskOptions}
-                    </select>
-                </div>
+                ${actionArea}
             `;
             survivorList.appendChild(card);
+        });
+    },
+
+    renderMissions: function() {
+        const missionList = document.getElementById('mission-list');
+        const activeMissionList = document.getElementById('active-mission-list');
+        if (!missionList || !activeMissionList) return;
+
+        missionList.innerHTML = '';
+        activeMissionList.innerHTML = '';
+
+        if (!window.gameState.availableMissions) return;
+
+        // Render Active Missions
+        if (window.gameState.activeMissions && window.gameState.activeMissions.length > 0) {
+            window.gameState.activeMissions.forEach((mission) => {
+                const card = document.createElement('div');
+                card.className = 'building-card survivor-card';
+                card.innerHTML = `
+                    <div class="survivor-header">
+                        <span class="survivor-name">${mission.name}</span>
+                        <span class="survivor-health" style="color: #ff9800;">Days left: ${mission.daysRemaining}</span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #aaa;">Team size: ${mission.team.length}</div>
+                `;
+                activeMissionList.appendChild(card);
+            });
+        } else {
+            activeMissionList.innerHTML = '<div style="font-size: 0.85rem; color: #aaa;">No active missions.</div>';
+        }
+
+        // Render Available Missions
+        window.gameState.availableMissions.forEach((mission) => {
+            const card = document.createElement('div');
+            card.className = 'building-card survivor-card';
+
+            // Check if any survivors are assigned to this mission intent
+            const assignedSurvivors = window.gameState.survivors.filter(s => s.assigned_mission === mission.id);
+            const teamSize = assignedSurvivors.length;
+
+            const canSend = teamSize >= mission.requiredSurvivors && teamSize <= mission.maxSurvivors;
+
+            // Generate assignment dropdown for available survivors
+            const availableSurvivors = window.gameState.survivors.filter(s => s.status === 'available' && s.health > 0);
+
+            let assignHtml = `<select class="mission-assign-select" data-mission-id="${mission.id}">
+                <option value="">Assign Survivor...</option>
+                ${availableSurvivors.map(s => {
+                    const isAssigned = s.assigned_mission === mission.id;
+                    if (!s.assigned_mission || isAssigned) {
+                        return `<option value="${s.id}" ${isAssigned ? 'selected disabled' : ''}>${s.name}</option>`;
+                    }
+                    return '';
+                }).join('')}
+            </select>`;
+
+            let teamHtml = '';
+            if (assignedSurvivors.length > 0) {
+                teamHtml = `<div style="margin: 0.5rem 0;"><strong>Team:</strong> `;
+                teamHtml += assignedSurvivors.map(s => `
+                    <span>${s.name} <button class="unassign-btn" data-survivor-id="${s.id}" data-action="unassign-mission" style="font-size:0.6rem; cursor:pointer;">X</button></span>
+                `).join(', ');
+                teamHtml += `</div>`;
+            }
+
+            card.innerHTML = `
+                <div class="survivor-header">
+                    <span class="survivor-name">${mission.name} (${mission.type})</span>
+                    <span class="survivor-health">Danger: ${mission.danger}%</span>
+                </div>
+                <div style="font-size: 0.85rem; margin-bottom: 0.5rem; color: #aaa;">
+                    ${mission.description}<br>
+                    <strong>Duration:</strong> ${mission.duration} days | <strong>Team:</strong> ${mission.requiredSurvivors}-${mission.maxSurvivors}
+                </div>
+                ${teamHtml}
+                <div class="building-action" style="margin-top: 0.5rem; display: flex; gap: 0.5rem; align-items: center;">
+                    ${assignHtml}
+                    <button class="build-btn" data-id="${mission.id}" data-action="send-mission" ${canSend ? '' : 'disabled'}>Send</button>
+                </div>
+            `;
+            missionList.appendChild(card);
         });
     },
 
@@ -117,10 +215,50 @@ const UI = {
         }
     },
 
+    renderEventModal: function(event) {
+        const modal = document.getElementById('event-modal');
+        const title = document.getElementById('event-title');
+        const desc = document.getElementById('event-description');
+        const choicesContainer = document.getElementById('event-choices');
+
+        if (!modal || !title || !desc || !choicesContainer) return;
+
+        title.textContent = event.title;
+        desc.textContent = event.description;
+        choicesContainer.innerHTML = '';
+
+        event.choices.forEach((choice, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'action-btn';
+            btn.textContent = choice.text;
+            btn.onclick = () => {
+                if (window.EventsLogic) {
+                    window.EventsLogic.resolveEventChoice(index);
+                }
+            };
+            choicesContainer.appendChild(btn);
+        });
+
+        modal.style.display = 'flex';
+    },
+
+    hideEventModal: function() {
+        const modal = document.getElementById('event-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    },
+
     renderAll: function() {
         this.renderResourceBar();
         this.renderSurvivors();
         this.renderBuildings();
+        this.renderMissions();
+
+        // If loaded into an active event, show it
+        if (window.gameState && window.gameState.activeEvent) {
+            this.renderEventModal(window.gameState.activeEvent);
+        }
     }
 };
 

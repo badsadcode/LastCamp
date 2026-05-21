@@ -1,0 +1,99 @@
+[
+    {
+        "id": "mission_abandoned_store",
+        "name": "Abandoned Store",
+        "type": "scavenge",
+        "duration": 1,
+        "danger": 10,
+        "requiredSurvivors": 1,
+        "maxSurvivors": 3,
+        "rewards": {
+            "food": [5, 15],
+            "water": [0, 5],
+            "medicine": [0, 2],
+            "scrap": [2, 8]
+        },
+        "skillChecks": {
+            "scavenging": 3,
+            "stealth": 2
+        },
+        "description": "An old grocery store. Most of it is looted, but there might be canned goods left in the back.",
+        "possibleEvents": ["locked_door", "infected_inside"]
+    },
+    {
+        "id": "mission_burned_clinic",
+        "name": "Burned Clinic",
+        "type": "medical",
+        "duration": 1,
+        "danger": 25,
+        "requiredSurvivors": 1,
+        "maxSurvivors": 2,
+        "rewards": {
+            "medicine": [1, 5],
+            "scrap": [1, 4]
+        },
+        "skillChecks": {
+            "medicine": 2,
+            "stealth": 3
+        },
+        "description": "A charred medical clinic. Dangerous, but highly likely to contain medical supplies.",
+        "possibleEvents": ["unstable_floor"]
+    },
+    {
+        "id": "mission_old_garage",
+        "name": "Old Garage",
+        "type": "salvage",
+        "duration": 2,
+        "danger": 15,
+        "requiredSurvivors": 2,
+        "maxSurvivors": 4,
+        "rewards": {
+            "scrap": [10, 25],
+            "tools": [1, 3],
+            "fuel": [0, 2]
+        },
+        "skillChecks": {
+            "construction": 3,
+            "combat": 2
+        },
+        "description": "An abandoned mechanic's garage. Great for tools and scrap, but might be occupied.",
+        "possibleEvents": ["raider_patrol"]
+    },
+    {
+        "id": "mission_empty_houses",
+        "name": "Empty Houses",
+        "type": "scavenge",
+        "duration": 1,
+        "danger": 5,
+        "requiredSurvivors": 1,
+        "maxSurvivors": 3,
+        "rewards": {
+            "food": [2, 8],
+            "scrap": [2, 6],
+            "ammo": [0, 2]
+        },
+        "skillChecks": {
+            "scavenging": 2
+        },
+        "description": "A small suburban street. Low risk, but low reward.",
+        "possibleEvents": []
+    },
+    {
+        "id": "mission_radio_tower",
+        "name": "Radio Tower",
+        "type": "recon",
+        "duration": 2,
+        "danger": 30,
+        "requiredSurvivors": 1,
+        "maxSurvivors": 2,
+        "rewards": {
+            "scrap": [5, 10]
+        },
+        "skillChecks": {
+            "combat": 3,
+            "stealth": 3
+        },
+        "description": "A high vantage point. Unlocks new distant locations on the map if secured.",
+        "possibleEvents": ["sniper_nest"]
+    }
+]

@@ -8,12 +8,15 @@ document.addEventListener('DOMContentLoaded', () => {
     UI.renderAll();
     UI.addLogMessage(`Day ${window.gameState.day} has begun.`);
 
-    // Ensure buildings are loaded before initial render
-    if (window.BuildingsLogic) {
-        window.BuildingsLogic.loadBuildings().then(() => {
-            UI.renderAll();
-        });
-    }
+    // Ensure data is loaded before initial render
+    const loadPromises = [];
+    if (window.BuildingsLogic) loadPromises.push(window.BuildingsLogic.loadBuildings());
+    if (window.MissionsLogic) loadPromises.push(window.MissionsLogic.loadMissions());
+    if (window.EventsLogic) loadPromises.push(window.EventsLogic.loadEvents());
+
+    Promise.all(loadPromises).then(() => {
+        UI.renderAll();
+    });
 
     // Handle Task Selection Changes
     document.getElementById('survivor-list').addEventListener('change', (event) => {
@@ -31,18 +34,40 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle Build/Upgrade buttons
     document.addEventListener('click', (event) => {
         if (event.target.classList.contains('build-btn')) {
-            const buildingId = event.target.getAttribute('data-id');
+            const id = event.target.getAttribute('data-id');
             const action = event.target.getAttribute('data-action');
 
             if (action === 'build') {
-                window.BuildingsLogic.buildStructure(buildingId);
+                window.BuildingsLogic.buildStructure(id);
             } else if (action === 'upgrade') {
-                window.BuildingsLogic.upgradeStructure(buildingId);
+                window.BuildingsLogic.upgradeStructure(id);
+            } else if (action === 'send-mission') {
+                window.MissionsLogic.sendMission(id);
             }
             UI.renderAll(); // Re-render to update UI and disabled states
 
             if (window.SaveSystem) {
                 window.SaveSystem.saveGame();
+            }
+        } else if (event.target.classList.contains('unassign-btn')) {
+            const survivorId = event.target.getAttribute('data-survivor-id');
+            const action = event.target.getAttribute('data-action');
+
+            if (action === 'unassign-mission') {
+                window.MissionsLogic.removeSurvivorFromMission(survivorId);
+                UI.renderAll();
+            }
+        }
+    });
+
+    // Handle Mission Assignment Changes
+    document.addEventListener('change', (event) => {
+        if (event.target.classList.contains('mission-assign-select')) {
+            const survivorId = event.target.value;
+            const missionId = event.target.getAttribute('data-mission-id');
+            if (survivorId) {
+                window.MissionsLogic.assignSurvivorToMission(survivorId, missionId);
+                UI.renderAll();
             }
         }
     });

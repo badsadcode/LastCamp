@@ -1,0 +1,50 @@
+[
+    {
+        "id": "food_theft",
+        "title": "Missing Food",
+        "description": "Someone has stolen food from the storage crate. It's unclear who did it.",
+        "triggerConditions": { "dayMin": 2, "chance": 0.15 },
+        "choices": [
+            {
+                "text": "Forgive it this time.",
+                "effects": { "morale": 5, "food": -2 }
+            },
+            {
+                "text": "Punish the camp collectively.",
+                "effects": { "morale": -10, "security": 5, "food": -2 }
+            }
+        ]
+    },
+    {
+        "id": "stranger_at_gate",
+        "title": "Stranger at the Gate",
+        "description": "A wounded stranger approaches the camp asking for medical help.",
+        "triggerConditions": { "dayMin": 3, "chance": 0.2 },
+        "choices": [
+            {
+                "text": "Use medicine to help.",
+                "effects": { "morale": 10, "medicine": -1 }
+            },
+            {
+                "text": "Turn them away.",
+                "effects": { "morale": -5, "security": 2 }
+            }
+        ]
+    },
+    {
+        "id": "equipment_failure",
+        "title": "Equipment Failure",
+        "description": "Some of your tools broke while someone was repairing the barricades.",
+        "triggerConditions": { "dayMin": 4, "chance": 0.1 },
+        "choices": [
+            {
+                "text": "Scavenge parts to fix them.",
+                "effects": { "scrap": -5 }
+            },
+            {
+                "text": "Throw them out.",
+                "effects": { "tools": -1, "morale": -2 }
+            }
+        ]
+    }
+]
