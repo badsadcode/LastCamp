@@ -82,4 +82,50 @@ document.addEventListener('DOMContentLoaded', () => {
             window.SaveSystem.saveGame();
         }
     });
+
+    // Save/Load System buttons
+    document.getElementById('new-game-btn').addEventListener('click', () => {
+        if (confirm("Are you sure you want to start a new game? Unsaved progress will be lost.")) {
+            // Reset state
+            window.gameState = JSON.parse(JSON.stringify(window.initialState));
+            // Trigger load promises again just in case (to reset pools if we modify them directly, though currently they are loaded onto gameState)
+            const loadPromises = [];
+            if (window.BuildingsLogic) loadPromises.push(window.BuildingsLogic.loadBuildings());
+            if (window.MissionsLogic) loadPromises.push(window.MissionsLogic.loadMissions());
+            if (window.EventsLogic) loadPromises.push(window.EventsLogic.loadEvents());
+
+            Promise.all(loadPromises).then(() => {
+                document.getElementById('log-list').innerHTML = '';
+                UI.addLogMessage("Started a new game.");
+                UI.renderAll();
+            });
+        }
+    });
+
+    document.getElementById('save-game-btn').addEventListener('click', () => {
+        if (window.SaveSystem) {
+            window.SaveSystem.saveGame();
+            UI.addLogMessage("Game manually saved.");
+        }
+    });
+
+    document.getElementById('load-game-btn').addEventListener('click', () => {
+        if (window.SaveSystem) {
+            if (window.SaveSystem.loadGame()) {
+                UI.addLogMessage("Game loaded.");
+                UI.renderAll();
+            } else {
+                UI.addLogMessage("No save file found.");
+            }
+        }
+    });
+
+    document.getElementById('delete-save-btn').addEventListener('click', () => {
+        if (window.SaveSystem) {
+            if (confirm("Are you sure you want to delete your save? This cannot be undone.")) {
+                window.SaveSystem.deleteSave();
+                UI.addLogMessage("Save file deleted.");
+            }
+        }
+    });
 });

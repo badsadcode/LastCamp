@@ -184,6 +184,21 @@ const UI = {
                 actionHtml = `<button class="build-btn" data-id="${building.id}" data-action="build" ${canAfford ? '' : 'disabled'}>Build (${buildCostStr})</button>`;
             }
 
+            // Find workers associated with this building (very simplified logic, if tasks map to buildings)
+            let workersHtml = '';
+            if (building.built) {
+                let workers = [];
+                if (building.id === 'watchtower') {
+                    workers = window.gameState.survivors.filter(s => s.current_task === 'Guard' && s.health > 0);
+                } else if (building.id === 'infirmary') {
+                    workers = window.gameState.survivors.filter(s => s.current_task === 'Treat Patients' && s.health > 0);
+                }
+
+                if (workers.length > 0) {
+                    workersHtml = `<div style="font-size: 0.8rem; margin-top: 0.5rem; color: #64b5f6;">Workers: ${workers.map(w => w.name).join(', ')}</div>`;
+                }
+            }
+
             card.innerHTML = `
                 <div class="survivor-header">
                     <span class="survivor-name">${building.name}</span>
@@ -192,6 +207,7 @@ const UI = {
                 <div style="font-size: 0.85rem; margin-bottom: 0.5rem; color: #aaa;">
                     ${building.description}
                 </div>
+                ${workersHtml}
                 <div class="building-action" style="margin-top: 0.5rem;">
                     ${actionHtml}
                 </div>

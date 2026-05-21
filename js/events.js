@@ -36,7 +36,7 @@ const EventsLogic = {
 
         // Basic randomization
         for (const event of possibleEvents) {
-            const chance = event.triggerConditions.chance || 0.1;
+            const chance = event.triggerConditions.chance || (window.Balance ? window.Balance.baseEventChance : 0.1);
             const roll = Math.random();
             // Lower morale increases event chance slightly in this prototype
             const moralePenalty = (100 - window.gameState.resources.morale) * 0.001;

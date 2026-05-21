@@ -81,46 +81,49 @@ let gameState = JSON.parse(JSON.stringify(initialState));
 
 function advanceDay() {
     let logs = [];
-    logs.push(`--- End of Day ${gameState.day} ---`);
+    logs.push(`--- End of Day ${window.gameState.day} ---`);
 
-    // 1. Each survivor consumes 1 food
-    const numSurvivors = gameState.survivors.length;
-    if (gameState.resources.food >= numSurvivors) {
-        gameState.resources.food -= numSurvivors;
-        logs.push(`The camp consumed ${numSurvivors} food.`);
+    // 1. Each survivor consumes food (only alive survivors)
+    const aliveSurvivors = window.gameState.survivors.filter(s => s.health > 0).length;
+    const foodNeeded = aliveSurvivors * (window.Balance ? window.Balance.foodConsumptionPerSurvivor : 1);
+
+    if (window.gameState.resources.food >= foodNeeded) {
+        window.gameState.resources.food -= foodNeeded;
+        logs.push(`The camp consumed ${foodNeeded} food.`);
     } else {
-        const foodEaten = gameState.resources.food;
-        gameState.resources.food = 0;
+        const foodEaten = window.gameState.resources.food;
+        window.gameState.resources.food = 0;
         logs.push(`The camp only had ${foodEaten} food. People are starving!`);
-        gameState.resources.morale -= 10;
+        window.gameState.resources.morale -= (window.Balance ? window.Balance.moraleStarvingPenalty : 10);
         logs.push(`Camp morale decreased due to lack of food.`);
     }
 
     // Check built buildings for passive/modifier effects
     const isBuilt = (id) => {
-        const b = gameState.buildings.find(b => b.id === id);
+        if (!window.gameState.buildings) return false;
+        const b = window.gameState.buildings.find(b => b.id === id);
         return b && b.built;
     };
 
-    const shelterLevel = isBuilt('shelter') ? gameState.buildings.find(b => b.id === 'shelter').level : 0;
-    const infirmaryLevel = isBuilt('infirmary') ? gameState.buildings.find(b => b.id === 'infirmary').level : 0;
-    const watchtowerLevel = isBuilt('watchtower') ? gameState.buildings.find(b => b.id === 'watchtower').level : 0;
-    const gardenLevel = isBuilt('garden') ? gameState.buildings.find(b => b.id === 'garden').level : 0;
+    const shelterLevel = isBuilt('shelter') ? window.gameState.buildings.find(b => b.id === 'shelter').level : 0;
+    const infirmaryLevel = isBuilt('infirmary') ? window.gameState.buildings.find(b => b.id === 'infirmary').level : 0;
+    const watchtowerLevel = isBuilt('watchtower') ? window.gameState.buildings.find(b => b.id === 'watchtower').level : 0;
+    const gardenLevel = isBuilt('garden') ? window.gameState.buildings.find(b => b.id === 'garden').level : 0;
 
     // Passive Watchtower Effect
     if (watchtowerLevel > 0) {
-        gameState.resources.security += (2 * watchtowerLevel);
+        window.gameState.resources.security += (2 * watchtowerLevel);
     }
 
     // Passive Garden Effect (assuming someone works it or it just produces passively based on level as per simple GDD)
     if (gardenLevel > 0) {
         const foodProd = gardenLevel * 2;
-        gameState.resources.food += foodProd;
+        window.gameState.resources.food += foodProd;
         logs.push(`The garden produced ${foodProd} food.`);
     }
 
     // 2. Process tasks
-    gameState.survivors.forEach(survivor => {
+    window.gameState.survivors.forEach(survivor => {
         if (survivor.health <= 0) {
             return; // Dead survivors don't process tasks or heal
         }
@@ -138,8 +141,8 @@ function advanceDay() {
                 if (infirmaryLevel > 0) healAmount += (infirmaryLevel * 5);
 
                 // If we have medicine, consume some to heal faster
-                if (gameState.resources.medicine > 0 && survivor.health < 80) {
-                    gameState.resources.medicine -= 1;
+                if (window.gameState.resources.medicine > 0 && survivor.health < 80) {
+                    window.gameState.resources.medicine -= 1;
                     healAmount += 15;
                     logs.push(`Medicine was used to treat ${survivor.name}.`);
                 }
@@ -155,7 +158,7 @@ function advanceDay() {
                 logs.push(`${survivor.name} rested and recovered fatigue.`);
                 break;
             case 'Guard':
-                gameState.resources.security += 5;
+                window.gameState.resources.security += 5;
                 survivor.fatigue += 10;
                 logs.push(`${survivor.name} stood guard, increasing camp security.`);
                 break;
@@ -164,11 +167,11 @@ function advanceDay() {
                 const roll = Math.random();
                 if (roll < 0.4) {
                     const foodFound = Math.floor(Math.random() * 3) + 1;
-                    gameState.resources.food += foodFound;
+                    window.gameState.resources.food += foodFound;
                     logs.push(`${survivor.name} scavenged and found ${foodFound} food.`);
                 } else if (roll < 0.8) {
                     const scrapFound = Math.floor(Math.random() * 3) + 1;
-                    gameState.resources.scrap += scrapFound;
+                    window.gameState.resources.scrap += scrapFound;
                     logs.push(`${survivor.name} scavenged and found ${scrapFound} scrap.`);
                 } else {
                     logs.push(`${survivor.name} scavenged but found nothing.`);
@@ -200,23 +203,32 @@ function advanceDay() {
 
     // 4. Apply Storage Caps
     const isBuiltLocal = (id) => {
-        const b = gameState.buildings.find(b => b.id === id);
+        if (!window.gameState.buildings) return false;
+        const b = window.gameState.buildings.find(b => b.id === id);
         return b && b.built;
     };
-    const storageLevel = isBuiltLocal('storage') ? gameState.buildings.find(b => b.id === 'storage').level : 0;
+    const storageLevel = isBuiltLocal('storage') ? window.gameState.buildings.find(b => b.id === 'storage').level : 0;
 
     const baseCap = 50;
     const currentCap = baseCap + (storageLevel * 25);
 
     for (const res of ['food', 'medicine', 'scrap', 'tools', 'fuel', 'ammo']) {
-        if (gameState.resources[res] > currentCap) {
-            gameState.resources[res] = currentCap;
+        if (window.gameState.resources[res] > currentCap) {
+            window.gameState.resources[res] = currentCap;
             // Optionally log cap reached
             // logs.push(`${res} capacity reached. Excess lost.`);
         }
     }
 
-    // 5. Check for random events
+    // 5. Check for Raids (Happens before random events)
+    if (window.RaidsLogic) {
+        const raidLogs = window.RaidsLogic.checkForRaid();
+        if (raidLogs) {
+            logs = logs.concat(raidLogs);
+        }
+    }
+
+    // 6. Check for random events
     if (window.EventsLogic) {
         const triggeredEvent = window.EventsLogic.checkForRandomEvent();
         if (triggeredEvent) {
@@ -225,9 +237,9 @@ function advanceDay() {
         }
     }
 
-    // 6. Advance Day
-    gameState.day += 1;
-    logs.push(`--- Day ${gameState.day} Begins ---`);
+    // 7. Advance Day
+    window.gameState.day += 1;
+    logs.push(`--- Day ${window.gameState.day} Begins ---`);
 
     return logs;
 }
